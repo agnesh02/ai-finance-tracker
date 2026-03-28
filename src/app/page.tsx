@@ -1,50 +1,61 @@
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import Link from "next/link"
+import Dashboard from "@/components/Dashboard"
 
 export default async function Home() {
   const session = await getServerSession(authOptions)
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-50 text-gray-900">
-      <div className="z-10 max-w-2xl w-full p-8 bg-white shadow-xl rounded-2xl flex flex-col items-center text-center">
-        <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
-          Financial Tracker (v1 Foundation)
-        </h1>
+    <main className="flex min-h-screen flex-col items-center justify-start p-6 md:p-12 bg-gray-50 text-gray-900">
+      <div className="w-full max-w-5xl flex flex-col gap-6">
         
+        {/* HEADER */}
+        <header className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-teal-500">
+            Financial Tracker
+          </h1>
+          {session ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-gray-600 hidden md:block">
+                Welcome, {session.user?.name || session.user?.email}
+              </span>
+              <Link 
+                href="/api/auth/signout"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition-colors"
+              >
+                Sign Out
+              </Link>
+            </div>
+          ) : null}
+        </header>
+
+        {/* MAIN CONTENT */}
         {session ? (
-          <div className="flex flex-col items-center gap-4">
-            <p className="text-lg text-gray-600">
-              Welcome back, <span className="font-semibold">{session.user?.name || session.user?.email}</span>
-            </p>
-            <Link 
-              href="/api/auth/signout"
-              className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
-            >
-              Sign Out
-            </Link>
-          </div>
+          <Dashboard userName={session.user?.name || session.user?.email || "User"} />
         ) : (
-          <div className="flex flex-col items-center gap-4 w-full max-w-sm">
-            <p className="text-lg text-gray-600 text-center mb-2">
-              You are not logged in.
+          <div className="bg-white p-12 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center mt-12">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Take Control of Your Money</h2>
+            <p className="text-gray-500 max-w-md mb-8">
+              A simple, secure, and lightning-fast way to track your income and expenses.
             </p>
-            
-            <Link 
-              href="/api/auth/signin"
-              className="w-full text-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-            >
-              Log In
-            </Link>
-            
-            <Link 
-              href="/register"
-              className="w-full text-center px-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium rounded-lg transition-colors shadow-sm"
-            >
-              Create Account
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm justify-center">
+              <Link 
+                href="/api/auth/signin"
+                className="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+              >
+                Log In
+              </Link>
+              <Link 
+                href="/register"
+                className="w-full sm:w-auto px-8 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium rounded-lg transition-colors shadow-sm"
+              >
+                Create Account
+              </Link>
+            </div>
           </div>
         )}
+        
       </div>
     </main>
   )
