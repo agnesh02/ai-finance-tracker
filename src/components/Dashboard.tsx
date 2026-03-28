@@ -181,12 +181,20 @@ export default function Dashboard({ userName }: { userName: string }) {
   }
 
   const handleUpdateGoalProgress = async (id: string, newAmount: number) => {
-    const res = await fetch("/api/goals", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, currentAmount: newAmount }),
-    })
-    if (res.ok) fetchData()
+    try {
+      const res = await fetch("/api/goals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, currentAmount: newAmount }),
+      })
+      if (!res.ok) {
+        console.error("Failed to update goal progress")
+        fetchData() // Re-sync on failure
+      }
+    } catch (error) {
+      console.error("Error updating goal progress", error)
+      fetchData() // Re-sync on error
+    }
   }
 
   const handleCancelSubscription = async (id: string) => {
@@ -237,6 +245,12 @@ export default function Dashboard({ userName }: { userName: string }) {
 
   return (
     <div className="w-full flex flex-col gap-8">
+      {/* WELCOME MESSAGE */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h2 className="text-xl font-bold text-gray-800">Hello, {userName}!</h2>
+        <p className="text-gray-500 text-sm">Here is your financial summary for this month.</p>
+      </div>
+
       {/* SUMMARY CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
@@ -446,6 +460,7 @@ export default function Dashboard({ userName }: { userName: string }) {
                       </div>
                       <input 
                         type="range" min="0" max={g.targetAmount} step="10" value={g.currentAmount}
+                        aria-label={`Current progress for goal ${g.name}`}
                         onChange={(e) => {
                           const val = parseFloat(e.target.value);
                           setGoals(prev => prev.map(goal => 
@@ -454,6 +469,7 @@ export default function Dashboard({ userName }: { userName: string }) {
                         }}
                         onMouseUp={(e) => handleUpdateGoalProgress(g.id, parseFloat((e.target as HTMLInputElement).value))}
                         onTouchEnd={(e) => handleUpdateGoalProgress(g.id, parseFloat((e.target as HTMLInputElement).value))}
+                        onKeyUp={(e) => handleUpdateGoalProgress(g.id, parseFloat((e.target as HTMLInputElement).value))}
                         className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                       />
                     </div>

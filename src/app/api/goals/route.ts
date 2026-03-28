@@ -20,15 +20,18 @@ export async function POST(req: Request) {
 
   const { name, targetAmount, currentAmount, deadline } = await req.json()
   
-  if (!name || targetAmount === undefined || targetAmount === null) {
-    return NextResponse.json({ error: "Name and target amount are required" }, { status: 400 })
+  const parsedTarget = parseFloat(targetAmount)
+  const parsedCurrent = parseFloat(currentAmount || 0)
+
+  if (!name || !Number.isFinite(parsedTarget) || parsedTarget < 0) {
+    return NextResponse.json({ error: "Valid name and target amount are required" }, { status: 400 })
   }
 
   const goal = await prisma.goal.create({
     data: {
       name,
-      targetAmount: parseFloat(targetAmount),
-      currentAmount: parseFloat(currentAmount || 0),
+      targetAmount: parsedTarget,
+      currentAmount: Number.isFinite(parsedCurrent) ? parsedCurrent : 0,
       deadline: deadline ? new Date(deadline) : null,
       userId: session.user.id,
     },
@@ -41,14 +44,15 @@ export async function PATCH(req: Request) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { id, currentAmount } = await req.json()
+  const parsedAmount = parseFloat(currentAmount)
 
-  if (!id || currentAmount === undefined || currentAmount === null) {
-    return NextResponse.json({ error: "ID and currentAmount are required" }, { status: 400 })
+  if (!id || !Number.isFinite(parsedAmount) || parsedAmount < 0) {
+    return NextResponse.json({ error: "Valid ID and currentAmount are required" }, { status: 400 })
   }
   
   const goal = await prisma.goal.updateMany({
     where: { id, userId: session.user.id },
-    data: { currentAmount: parseFloat(currentAmount) },
+    data: { currentAmount: parsedAmount },
   })
 
   if (goal.count === 0) {
