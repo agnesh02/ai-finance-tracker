@@ -183,7 +183,7 @@ export default function Dashboard({ userName }: { userName: string }) {
     return categories
   }, [transactions])
 
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: Object.keys(expenseByCategory),
     datasets: [
       {
@@ -206,7 +206,7 @@ export default function Dashboard({ userName }: { userName: string }) {
         borderWidth: 1,
       },
     ],
-  }
+  }), [expenseByCategory])
 
   return (
     <div className="w-full flex flex-col gap-8">
