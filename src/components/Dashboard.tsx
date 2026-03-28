@@ -444,7 +444,13 @@ export default function Dashboard({ userName }: { userName: string }) {
                       </div>
                       <input 
                         type="range" min="0" max={g.targetAmount} step="10" value={g.currentAmount}
-                        onChange={(e) => handleUpdateGoalProgress(g.id, parseFloat(e.target.value))}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setGoals(prev => prev.map(goal => 
+                            goal.id === g.id ? { ...goal, currentAmount: val } : goal
+                          ));
+                        }}
+                        onPointerUp={(e) => handleUpdateGoalProgress(g.id, parseFloat((e.target as HTMLInputElement).value))}
                         className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                       />
                     </div>
