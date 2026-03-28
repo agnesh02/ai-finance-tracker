@@ -24,7 +24,7 @@ jobs:
         run: npx prisma generate
         
       - name: Run ESLint
-        run: npm run lint --if-present || echo "No lint script found"
+        run: npm run lint --if-present
 
       - name: Type Check
-        run: npx tsc --noEmit || echo "No tsc script found"
+        run: npx tsc --noEmit
