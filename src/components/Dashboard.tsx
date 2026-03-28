@@ -48,11 +48,20 @@ type Subscription = {
   status: string
 }
 
+type Goal = {
+  id: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+  deadline: string | null
+}
+
 export default function Dashboard({ userName }: { userName: string }) {
   const router = useRouter()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
 
   // Transaction form state
@@ -70,32 +79,28 @@ export default function Dashboard({ userName }: { userName: string }) {
   const [subAmount, setSubAmount] = useState("")
   const [subDate, setSubDate] = useState("1")
 
+  // Goal form state
+  const [goalName, setGoalName] = useState("")
+  const [goalTarget, setGoalTarget] = useState("")
+  const [goalCurrent, setGoalCurrent] = useState("")
+
   useEffect(() => {
     fetchData()
   }, [])
 
   const fetchData = async () => {
     try {
-      const [transRes, budgRes, subRes] = await Promise.all([
+      const [transRes, budgRes, subRes, goalRes] = await Promise.all([
         fetch("/api/transactions"),
         fetch("/api/budgets"),
-        fetch("/api/subscriptions")
+        fetch("/api/subscriptions"),
+        fetch("/api/goals")
       ])
       
-      if (transRes.ok) {
-        const tData = await transRes.json()
-        setTransactions(tData)
-      }
-      
-      if (budgRes.ok) {
-        const bData = await budgRes.json()
-        setBudgets(bData)
-      }
-
-      if (subRes.ok) {
-        const sData = await subRes.json()
-        setSubscriptions(sData)
-      }
+      if (transRes.ok) setTransactions(await transRes.json())
+      if (budgRes.ok) setBudgets(await budgRes.json())
+      if (subRes.ok) setSubscriptions(await subRes.json())
+      if (goalRes.ok) setGoals(await goalRes.json())
     } catch (error) {
       console.error("Failed to fetch data", error)
     } finally {
@@ -157,14 +162,36 @@ export default function Dashboard({ userName }: { userName: string }) {
     }
   }
 
-  const handleCancelSubscription = async (id: string) => {
-    const res = await fetch(`/api/subscriptions?id=${id}`, {
-      method: "DELETE",
+  const handleAddGoal = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!goalName || !goalTarget) return
+
+    const res = await fetch("/api/goals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: goalName, targetAmount: goalTarget, currentAmount: goalCurrent }),
     })
-    
+
     if (res.ok) {
+      setGoalName("")
+      setGoalTarget("")
+      setGoalCurrent("")
       fetchData()
     }
+  }
+
+  const handleUpdateGoalProgress = async (id: string, newAmount: number) => {
+    const res = await fetch("/api/goals", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, currentAmount: newAmount }),
+    })
+    if (res.ok) fetchData()
+  }
+
+  const handleCancelSubscription = async (id: string) => {
+    const res = await fetch(`/api/subscriptions?id=${id}`, { method: "DELETE" })
+    if (res.ok) fetchData()
   }
 
   const totalIncome = transactions.filter(t => t.type === "INCOME").reduce((acc, t) => acc + t.amount, 0)
@@ -253,28 +280,18 @@ export default function Dashboard({ userName }: { userName: string }) {
               </div>
               
               <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Amount ($)"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
+                type="number" step="0.01" min="0" placeholder="Amount ($)"
+                value={amount} onChange={(e) => setAmount(e.target.value)} required
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
-                type="text"
-                placeholder="Category (e.g. Groceries, Salary)"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
+                type="text" placeholder="Category (e.g. Groceries, Salary)"
+                value={category} onChange={(e) => setCategory(e.target.value)} required
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
-                type="text"
-                placeholder="Note (optional)"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
+                type="text" placeholder="Note (optional)"
+                value={note} onChange={(e) => setNote(e.target.value)}
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
@@ -292,21 +309,13 @@ export default function Dashboard({ userName }: { userName: string }) {
             <h2 className="text-lg font-bold mb-4 text-gray-800">Set Monthly Budget</h2>
             <form onSubmit={handleAddBudget} className="flex flex-col gap-4">
               <input
-                type="text"
-                placeholder="Category (e.g. Groceries)"
-                value={budgetCategory}
-                onChange={(e) => setBudgetCategory(e.target.value)}
-                required
+                type="text" placeholder="Category (e.g. Groceries)"
+                value={budgetCategory} onChange={(e) => setBudgetCategory(e.target.value)} required
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-purple-500"
               />
               <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Limit ($)"
-                value={budgetAmount}
-                onChange={(e) => setBudgetAmount(e.target.value)}
-                required
+                type="number" step="0.01" min="0" placeholder="Limit ($)"
+                value={budgetAmount} onChange={(e) => setBudgetAmount(e.target.value)} required
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-purple-500"
               />
               <button
@@ -324,34 +333,20 @@ export default function Dashboard({ userName }: { userName: string }) {
             <h2 className="text-lg font-bold mb-4 text-gray-800">Add Subscription</h2>
             <form onSubmit={handleAddSubscription} className="flex flex-col gap-4">
               <input
-                type="text"
-                placeholder="Service (e.g. Netflix)"
-                value={subName}
-                onChange={(e) => setSubName(e.target.value)}
-                required
+                type="text" placeholder="Service (e.g. Netflix)"
+                value={subName} onChange={(e) => setSubName(e.target.value)} required
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
               />
               <div className="flex gap-4">
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Monthly ($)"
-                  value={subAmount}
-                  onChange={(e) => setSubAmount(e.target.value)}
-                  required
+                  type="number" step="0.01" min="0" placeholder="Monthly ($)"
+                  value={subAmount} onChange={(e) => setSubAmount(e.target.value)} required
                   className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500 flex-1"
                 />
                 <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  placeholder="Day (1-31)"
-                  value={subDate}
-                  onChange={(e) => setSubDate(e.target.value)}
-                  required
+                  type="number" min="1" max="31" placeholder="Day (1-31)"
+                  value={subDate} onChange={(e) => setSubDate(e.target.value)} required
                   className="p-3 border border-gray-200 rounded-lg w-24 outline-none focus:ring-2 focus:ring-blue-500"
-                  title="Day of the month it bills"
                 />
               </div>
               <button
@@ -359,6 +354,37 @@ export default function Dashboard({ userName }: { userName: string }) {
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors mt-2"
               >
                 Add Subscription
+              </button>
+            </form>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          <div>
+            <h2 className="text-lg font-bold mb-4 text-gray-800">New Savings Goal</h2>
+            <form onSubmit={handleAddGoal} className="flex flex-col gap-4">
+              <input
+                type="text" placeholder="Goal (e.g. New MacBook)"
+                value={goalName} onChange={(e) => setGoalName(e.target.value)} required
+                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-teal-500"
+              />
+              <div className="flex gap-4">
+                <input
+                  type="number" step="0.01" min="0" placeholder="Target ($)"
+                  value={goalTarget} onChange={(e) => setGoalTarget(e.target.value)} required
+                  className="p-3 border border-gray-200 rounded-lg flex-1 outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <input
+                  type="number" step="0.01" min="0" placeholder="Current ($)"
+                  value={goalCurrent} onChange={(e) => setGoalCurrent(e.target.value)}
+                  className="p-3 border border-gray-200 rounded-lg w-24 outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors mt-2"
+              >
+                Create Goal
               </button>
             </form>
           </div>
@@ -390,6 +416,43 @@ export default function Dashboard({ userName }: { userName: string }) {
               <p className="text-gray-500 text-center py-10">Add some expenses to see your breakdown.</p>
             )}
           </div>
+
+          {/* SAVINGS GOALS */}
+          {goals.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h2 className="text-xl font-bold mb-4 text-gray-800">Savings Goals</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {goals.map((g) => {
+                  const percentage = Math.min((g.currentAmount / g.targetAmount) * 100, 100)
+                  return (
+                    <div key={g.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-gray-800">{g.name}</span>
+                        <span className="text-xs font-semibold bg-teal-100 text-teal-800 px-2 py-1 rounded-full">
+                          {percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="bg-teal-500 h-3 rounded-full transition-all duration-500" 
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">${g.currentAmount.toFixed(2)}</span>
+                        <span className="text-gray-400">of ${g.targetAmount.toFixed(2)}</span>
+                      </div>
+                      <input 
+                        type="range" min="0" max={g.targetAmount} step="10" value={g.currentAmount}
+                        onChange={(e) => handleUpdateGoalProgress(g.id, parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* BUDGET TRACKER */}
           {budgets.length > 0 && (
