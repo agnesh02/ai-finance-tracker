@@ -1,3 +1,19 @@
+# [1.2.0](https://github.com/agnesh02/ai-finance-tracker/compare/v1.1.0...v1.2.0) (2026-03-28)
+
+
+### Bug Fixes
+
+* address CodeRabbit review comments on PR [#16](https://github.com/agnesh02/ai-finance-tracker/issues/16) ([5f35bab](https://github.com/agnesh02/ai-finance-tracker/commit/5f35babf3621748d09ab26f85e71c2d7ff1e07ea))
+* address CodeRabbit review comments on PR [#17](https://github.com/agnesh02/ai-finance-tracker/issues/17) (accessibility, validation, and error handling) ([c6d8fd5](https://github.com/agnesh02/ai-finance-tracker/commit/c6d8fd5937123629514134178ff10e73b6832023))
+* address PR review comments for goals API and dashboard ([15a7455](https://github.com/agnesh02/ai-finance-tracker/commit/15a7455b8f76980dd83220270b8fff46e5f95437))
+* debounce goal progress updates to prevent excessive API calls ([c336e26](https://github.com/agnesh02/ai-finance-tracker/commit/c336e26d68427ba35a2f7fbf508fcce2757ad030))
+
+
+### Features
+
+* **v5:** build savings goals with progress tracking ([1fd62ae](https://github.com/agnesh02/ai-finance-tracker/commit/1fd62ae458cb240c35a5b53d093c9d1b56f99d14))
+* **v5:** savings goals and progress tracking ([5e8b967](https://github.com/agnesh02/ai-finance-tracker/commit/5e8b967d19c24099ae1a53ca5ffacb409b3f2ef2))
+
 # [1.1.0](https://github.com/agnesh02/ai-finance-tracker/compare/v1.0.0...v1.1.0) (2026-03-28)
 
 
