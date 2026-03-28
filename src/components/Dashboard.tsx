@@ -12,36 +12,56 @@ type Transaction = {
   type: "INCOME" | "EXPENSE"
 }
 
+type Budget = {
+  id: string
+  category: string
+  amount: number
+}
+
 export default function Dashboard({ userName }: { userName: string }) {
   const router = useRouter()
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [budgets, setBudgets] = useState<Budget[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Form state
+  // Transaction form state
   const [amount, setAmount] = useState("")
   const [category, setCategory] = useState("")
   const [type, setType] = useState<"INCOME" | "EXPENSE">("EXPENSE")
   const [note, setNote] = useState("")
 
+  // Budget form state
+  const [budgetCategory, setBudgetCategory] = useState("")
+  const [budgetAmount, setBudgetAmount] = useState("")
+
   useEffect(() => {
-    fetchTransactions()
+    fetchData()
   }, [])
 
-  const fetchTransactions = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch("/api/transactions")
-      if (res.ok) {
-        const data = await res.json()
-        setTransactions(data)
+      const [transRes, budgRes] = await Promise.all([
+        fetch("/api/transactions"),
+        fetch("/api/budgets")
+      ])
+      
+      if (transRes.ok) {
+        const tData = await transRes.json()
+        setTransactions(tData)
+      }
+      
+      if (budgRes.ok) {
+        const bData = await budgRes.json()
+        setBudgets(bData)
       }
     } catch (error) {
-      console.error("Failed to fetch transactions", error)
+      console.error("Failed to fetch data", error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!amount || !category) return
 
@@ -52,13 +72,28 @@ export default function Dashboard({ userName }: { userName: string }) {
     })
 
     if (res.ok) {
-      // Reset form
       setAmount("")
       setCategory("")
       setNote("")
-      // Refresh list
-      fetchTransactions()
+      fetchData()
       router.refresh()
+    }
+  }
+
+  const handleAddBudget = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!budgetAmount || !budgetCategory) return
+
+    const res = await fetch("/api/budgets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: budgetAmount, category: budgetCategory }),
+    })
+
+    if (res.ok) {
+      setBudgetAmount("")
+      setBudgetCategory("")
+      fetchData()
     }
   }
 
@@ -88,86 +123,162 @@ export default function Dashboard({ userName }: { userName: string }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* ADD TRANSACTION FORM */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 lg:col-span-1 h-fit">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Add Transaction</h2>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 lg:col-span-1 h-fit flex flex-col gap-6">
+          
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Add Transaction</h2>
+            <form onSubmit={handleAddTransaction} className="flex flex-col gap-4">
+              <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+                <button
+                  type="button"
+                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${type === "EXPENSE" ? "bg-white shadow-sm text-gray-900" : "text-gray-500"}`}
+                  onClick={() => setType("EXPENSE")}
+                >
+                  Expense
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${type === "INCOME" ? "bg-white shadow-sm text-gray-900" : "text-gray-500"}`}
+                  onClick={() => setType("INCOME")}
+                >
+                  Income
+                </button>
+              </div>
+              
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Amount ($)"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                placeholder="Category (e.g. Groceries, Salary)"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                placeholder="Note (optional)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
+              />
               <button
-                type="button"
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${type === "EXPENSE" ? "bg-white shadow-sm text-gray-900" : "text-gray-500"}`}
-                onClick={() => setType("EXPENSE")}
+                type="submit"
+                className={`w-full py-3 text-white font-medium rounded-lg transition-colors mt-2 ${type === "INCOME" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
               >
-                Expense
+                Add {type === "INCOME" ? "Income" : "Expense"}
               </button>
+            </form>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          <div>
+            <h2 className="text-lg font-bold mb-4 text-gray-800">Set Monthly Budget</h2>
+            <form onSubmit={handleAddBudget} className="flex flex-col gap-4">
+              <input
+                type="text"
+                placeholder="Category (e.g. Groceries)"
+                value={budgetCategory}
+                onChange={(e) => setBudgetCategory(e.target.value)}
+                required
+                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Limit ($)"
+                value={budgetAmount}
+                onChange={(e) => setBudgetAmount(e.target.value)}
+                required
+                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-purple-500"
+              />
               <button
-                type="button"
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${type === "INCOME" ? "bg-white shadow-sm text-gray-900" : "text-gray-500"}`}
-                onClick={() => setType("INCOME")}
+                type="submit"
+                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors mt-2"
               >
-                Income
+                Set Budget limit
               </button>
-            </div>
-            
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Amount ($)"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="text"
-              placeholder="Category (e.g. Groceries, Salary)"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              required
-              className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="text"
-              placeholder="Note (optional)"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              type="submit"
-              className={`w-full py-3 text-white font-medium rounded-lg transition-colors mt-2 ${type === "INCOME" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
-            >
-              Add {type === "INCOME" ? "Income" : "Expense"}
-            </button>
-          </form>
+            </form>
+          </div>
+
         </div>
 
-        {/* TRANSACTIONS LIST */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 lg:col-span-2">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Recent Transactions</h2>
-          {loading ? (
-            <p className="text-gray-500">Loading your data...</p>
-          ) : transactions.length === 0 ? (
-            <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <p className="text-gray-500">No transactions yet. Add your first one!</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {transactions.map((t) => (
-                <div key={t.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-gray-800">{t.category}</span>
-                    <span className="text-sm text-gray-500">
-                      {new Date(t.date).toLocaleDateString()} {t.note && `• ${t.note}`}
-                    </span>
-                  </div>
-                  <span className={`font-bold ${t.type === "INCOME" ? "text-green-600" : "text-gray-900"}`}>
-                    {t.type === "INCOME" ? "+" : "-"}${t.amount.toFixed(2)}
-                  </span>
-                </div>
-              ))}
+        {/* DATA PANELS */}
+        <div className="flex flex-col gap-8 lg:col-span-2">
+          
+          {/* BUDGET TRACKER */}
+          {budgets.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h2 className="text-xl font-bold mb-4 text-gray-800">Budget Tracker</h2>
+              <div className="flex flex-col gap-5">
+                {budgets.map((b) => {
+                  // Calculate how much was spent in this category
+                  const spent = transactions
+                    .filter(t => t.type === "EXPENSE" && t.category.toLowerCase() === b.category.toLowerCase())
+                    .reduce((acc, t) => acc + t.amount, 0)
+                  
+                  const percentage = Math.min((spent / b.amount) * 100, 100)
+                  const isOver = spent > b.amount
+
+                  return (
+                    <div key={b.id} className="flex flex-col gap-2">
+                      <div className="flex justify-between items-end">
+                        <span className="font-medium text-gray-800">{b.category}</span>
+                        <span className="text-sm font-medium text-gray-600">
+                          ${spent.toFixed(2)} <span className="text-gray-400">/ ${b.amount.toFixed(2)}</span>
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                        <div 
+                          className={`h-2.5 rounded-full ${isOver ? 'bg-red-500' : 'bg-purple-500'}`} 
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      {isOver && <span className="text-xs text-red-500 font-medium">Over budget by ${(spent - b.amount).toFixed(2)}</span>}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
+
+          {/* TRANSACTIONS LIST */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Recent Transactions</h2>
+            {loading ? (
+              <p className="text-gray-500">Loading your data...</p>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                <p className="text-gray-500">No transactions yet. Add your first one!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {transactions.map((t) => (
+                  <div key={t.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-gray-800">{t.category}</span>
+                      <span className="text-sm text-gray-500">
+                        {new Date(t.date).toLocaleDateString()} {t.note && `• ${t.note}`}
+                      </span>
+                    </div>
+                    <span className={`font-bold ${t.type === "INCOME" ? "text-green-600" : "text-gray-900"}`}>
+                      {t.type === "INCOME" ? "+" : "-"}${t.amount.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
