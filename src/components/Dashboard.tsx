@@ -18,10 +18,20 @@ type Budget = {
   amount: number
 }
 
+type Subscription = {
+  id: string
+  name: string
+  amount: number
+  billingDate: number
+  category: string
+  status: string
+}
+
 export default function Dashboard({ userName }: { userName: string }) {
   const router = useRouter()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
 
   // Transaction form state
@@ -34,15 +44,21 @@ export default function Dashboard({ userName }: { userName: string }) {
   const [budgetCategory, setBudgetCategory] = useState("")
   const [budgetAmount, setBudgetAmount] = useState("")
 
+  // Subscription form state
+  const [subName, setSubName] = useState("")
+  const [subAmount, setSubAmount] = useState("")
+  const [subDate, setSubDate] = useState("1")
+
   useEffect(() => {
     fetchData()
   }, [])
 
   const fetchData = async () => {
     try {
-      const [transRes, budgRes] = await Promise.all([
+      const [transRes, budgRes, subRes] = await Promise.all([
         fetch("/api/transactions"),
-        fetch("/api/budgets")
+        fetch("/api/budgets"),
+        fetch("/api/subscriptions")
       ])
       
       if (transRes.ok) {
@@ -53,6 +69,11 @@ export default function Dashboard({ userName }: { userName: string }) {
       if (budgRes.ok) {
         const bData = await budgRes.json()
         setBudgets(bData)
+      }
+
+      if (subRes.ok) {
+        const sData = await subRes.json()
+        setSubscriptions(sData)
       }
     } catch (error) {
       console.error("Failed to fetch data", error)
@@ -97,9 +118,38 @@ export default function Dashboard({ userName }: { userName: string }) {
     }
   }
 
+  const handleAddSubscription = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!subName || !subAmount || !subDate) return
+
+    const res = await fetch("/api/subscriptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: subName, amount: subAmount, billingDate: subDate }),
+    })
+
+    if (res.ok) {
+      setSubName("")
+      setSubAmount("")
+      setSubDate("1")
+      fetchData()
+    }
+  }
+
+  const handleCancelSubscription = async (id: string) => {
+    const res = await fetch(`/api/subscriptions?id=${id}`, {
+      method: "DELETE",
+    })
+    
+    if (res.ok) {
+      fetchData()
+    }
+  }
+
   const totalIncome = transactions.filter(t => t.type === "INCOME").reduce((acc, t) => acc + t.amount, 0)
   const totalExpense = transactions.filter(t => t.type === "EXPENSE").reduce((acc, t) => acc + t.amount, 0)
   const netBalance = totalIncome - totalExpense
+  const totalSubscriptions = subscriptions.reduce((acc, s) => acc + s.amount, 0)
 
   return (
     <div className="w-full flex flex-col gap-8">
@@ -211,6 +261,51 @@ export default function Dashboard({ userName }: { userName: string }) {
             </form>
           </div>
 
+          <hr className="border-gray-100" />
+
+          <div>
+            <h2 className="text-lg font-bold mb-4 text-gray-800">Add Subscription</h2>
+            <form onSubmit={handleAddSubscription} className="flex flex-col gap-4">
+              <input
+                type="text"
+                placeholder="Service (e.g. Netflix)"
+                value={subName}
+                onChange={(e) => setSubName(e.target.value)}
+                required
+                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex gap-4">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Monthly ($)"
+                  value={subAmount}
+                  onChange={(e) => setSubAmount(e.target.value)}
+                  required
+                  className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  placeholder="Day (1-31)"
+                  value={subDate}
+                  onChange={(e) => setSubDate(e.target.value)}
+                  required
+                  className="p-3 border border-gray-200 rounded-lg w-24 outline-none focus:ring-2 focus:ring-blue-500"
+                  title="Day of the month it bills"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors mt-2"
+              >
+                Add Subscription
+              </button>
+            </form>
+          </div>
+
         </div>
 
         {/* DATA PANELS */}
@@ -248,6 +343,41 @@ export default function Dashboard({ userName }: { userName: string }) {
                     </div>
                   )
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* SUBSCRIPTION MANAGER */}
+          {subscriptions.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">Monthly Subscriptions</h2>
+                <span className="bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full">
+                  ${totalSubscriptions.toFixed(2)} / mo
+                </span>
+              </div>
+              <div className="flex flex-col gap-3">
+                {subscriptions.map((s) => (
+                  <div key={s.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-gray-800">{s.name}</span>
+                      <span className="text-sm text-gray-500">
+                        Bills on the {s.billingDate}{s.billingDate === 1 || s.billingDate === 21 || s.billingDate === 31 ? "st" : s.billingDate === 2 || s.billingDate === 22 ? "nd" : s.billingDate === 3 || s.billingDate === 23 ? "rd" : "th"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-gray-900">
+                        ${s.amount.toFixed(2)}
+                      </span>
+                      <button 
+                        onClick={() => handleCancelSubscription(s.id)}
+                        className="text-red-500 hover:text-red-700 text-sm font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
