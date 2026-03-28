@@ -423,7 +423,9 @@ export default function Dashboard({ userName }: { userName: string }) {
               <h2 className="text-xl font-bold mb-4 text-gray-800">Savings Goals</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {goals.map((g) => {
-                  const percentage = Math.min((g.currentAmount / g.targetAmount) * 100, 100)
+                  const percentage = g.targetAmount > 0 
+                    ? Math.min((g.currentAmount / g.targetAmount) * 100, 100) 
+                    : 0
                   return (
                     <div key={g.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-3">
                       <div className="flex justify-between items-center">
@@ -450,7 +452,8 @@ export default function Dashboard({ userName }: { userName: string }) {
                             goal.id === g.id ? { ...goal, currentAmount: val } : goal
                           ));
                         }}
-                        onPointerUp={(e) => handleUpdateGoalProgress(g.id, parseFloat((e.target as HTMLInputElement).value))}
+                        onMouseUp={(e) => handleUpdateGoalProgress(g.id, parseFloat((e.target as HTMLInputElement).value))}
+                        onTouchEnd={(e) => handleUpdateGoalProgress(g.id, parseFloat((e.target as HTMLInputElement).value))}
                         className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                       />
                     </div>
