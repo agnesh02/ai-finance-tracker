@@ -1,7 +1,28 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js'
+import { Bar, Pie } from 'react-chartjs-2'
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+)
 
 type Transaction = {
   id: string
@@ -151,6 +172,42 @@ export default function Dashboard({ userName }: { userName: string }) {
   const netBalance = totalIncome - totalExpense
   const totalSubscriptions = subscriptions.reduce((acc, s) => acc + s.amount, 0)
 
+  // Chart Logic
+  const expenseByCategory = useMemo(() => {
+    const categories: Record<string, number> = {}
+    transactions
+      .filter(t => t.type === "EXPENSE")
+      .forEach(t => {
+        categories[t.category] = (categories[t.category] || 0) + t.amount
+      })
+    return categories
+  }, [transactions])
+
+  const chartData = {
+    labels: Object.keys(expenseByCategory),
+    datasets: [
+      {
+        label: 'Expenses by Category',
+        data: Object.values(expenseByCategory),
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.6)',
+          'rgba(168, 85, 247, 0.6)',
+          'rgba(236, 72, 153, 0.6)',
+          'rgba(249, 115, 22, 0.6)',
+          'rgba(20, 184, 166, 0.6)',
+        ],
+        borderColor: [
+          'rgba(59, 130, 246, 1)',
+          'rgba(168, 85, 247, 1)',
+          'rgba(236, 72, 153, 1)',
+          'rgba(249, 115, 22, 1)',
+          'rgba(20, 184, 166, 1)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  }
+
   return (
     <div className="w-full flex flex-col gap-8">
       {/* SUMMARY CARDS */}
@@ -172,7 +229,7 @@ export default function Dashboard({ userName }: { userName: string }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* ADD TRANSACTION FORM */}
+        {/* LEFT COLUMN: FORMS */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 lg:col-span-1 h-fit flex flex-col gap-6">
           
           <div>
@@ -308,16 +365,38 @@ export default function Dashboard({ userName }: { userName: string }) {
 
         </div>
 
-        {/* DATA PANELS */}
+        {/* RIGHT COLUMN: DATA PANELS */}
         <div className="flex flex-col gap-8 lg:col-span-2">
           
+          {/* ANALYTICS PANEL */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Expense Analytics</h2>
+            {Object.keys(expenseByCategory).length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="h-64">
+                  <Pie 
+                    data={chartData} 
+                    options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} 
+                  />
+                </div>
+                <div className="h-64">
+                  <Bar 
+                    data={chartData} 
+                    options={{ maintainAspectRatio: false, plugins: { legend: { display: false } } }} 
+                  />
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-10">Add some expenses to see your breakdown.</p>
+            )}
+          </div>
+
           {/* BUDGET TRACKER */}
           {budgets.length > 0 && (
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold mb-4 text-gray-800">Budget Tracker</h2>
               <div className="flex flex-col gap-5">
                 {budgets.map((b) => {
-                  // Calculate how much was spent in this category
                   const spent = transactions
                     .filter(t => t.type === "EXPENSE" && t.category.toLowerCase() === b.category.toLowerCase())
                     .reduce((acc, t) => acc + t.amount, 0)
