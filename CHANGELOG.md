@@ -1,3 +1,11 @@
+# [1.1.0](https://github.com/agnesh02/ai-finance-tracker/compare/v1.0.0...v1.1.0) (2026-03-28)
+
+
+### Features
+
+* **v4:** add visual analytics with Chart.js ([f0eb448](https://github.com/agnesh02/ai-finance-tracker/commit/f0eb448b1b12ff7c95c5035455c052a19658e968))
+* **v4:** visual analytics and spending trends ([762f8b6](https://github.com/agnesh02/ai-finance-tracker/commit/762f8b663ab3ca2b0237226d30ce81d8c3f84c33))
+
 # 1.0.0 (2026-03-28)
 
 
