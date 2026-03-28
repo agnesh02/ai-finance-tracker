@@ -56,7 +56,7 @@ type Goal = {
   deadline: string | null
 }
 
-export default function Dashboard({ userName }: { userName: string }) {
+export default function Dashboard({ userName = "User" }: { userName?: string }) {
   const router = useRouter()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
@@ -97,10 +97,15 @@ export default function Dashboard({ userName }: { userName: string }) {
         fetch("/api/goals")
       ])
       
-      if (transRes.ok) setTransactions(await transRes.json())
-      if (budgRes.ok) setBudgets(await budgRes.json())
-      if (subRes.ok) setSubscriptions(await subRes.json())
-      if (goalRes.ok) setGoals(await goalRes.json())
+      if (!transRes.ok) throw new Error("Failed to fetch transactions")
+      if (!budgRes.ok) throw new Error("Failed to fetch budgets")
+      if (!subRes.ok) throw new Error("Failed to fetch subscriptions")
+      if (!goalRes.ok) throw new Error("Failed to fetch goals")
+
+      setTransactions(await transRes.json())
+      setBudgets(await budgRes.json())
+      setSubscriptions(await subRes.json())
+      setGoals(await goalRes.json())
     } catch (error) {
       console.error("Failed to fetch data", error)
     } finally {
