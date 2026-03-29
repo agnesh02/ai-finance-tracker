@@ -57,7 +57,7 @@ export default async function Home() {
         )}
         
       </div>
-      <footer className="mt-8 text-center text-xs text-gray-400">© 2026 BroBot Finance. Built with OpenClaw.</footer>
+      <footer className="mt-8 text-center text-xs text-gray-400">© {new Date().getFullYear()} BroBot Finance. Built with OpenClaw.</footer>
     </main>
   )
 }
