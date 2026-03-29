@@ -11,9 +11,10 @@
 2. **Dashboard:** High-level summary (Total Income, Total Expenses, Net).
 3. **Transaction Management:** Add/Edit/Delete manual transactions (Amount, Date, Category, Note).
 4. **Basic Visualization:** A simple chart showing expenses by category.
+5. **Bulk CSV Import:** Foundation implemented for importing transactions from `.csv` files.
 
 ## Future Phases
-- CSV statement uploads.
+- CSV field mapping UI (v2).
 - Budgeting goals.
 - Receipt scanning (GCP Vision API).
 - Plaid API integration (bank sync).

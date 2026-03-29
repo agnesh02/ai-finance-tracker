@@ -13,6 +13,7 @@ import {
   ArcElement,
 } from 'chart.js'
 import { Bar, Pie } from 'react-chartjs-2'
+import Papa from 'papaparse'
 
 ChartJS.register(
   CategoryScale,
@@ -83,6 +84,10 @@ export default function Dashboard({ userName }: { userName: string }) {
   const [goalName, setGoalName] = useState("")
   const [goalTarget, setGoalTarget] = useState("")
   const [goalCurrent, setGoalCurrent] = useState("")
+
+  // CSV import state
+  const [importing, setImporting] = useState(false)
+  const [importMessage, setImportMessage] = useState("")
 
   useEffect(() => {
     fetchData()
@@ -194,6 +199,71 @@ export default function Dashboard({ userName }: { userName: string }) {
     if (res.ok) fetchData()
   }
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportMessage("Parsing CSV...");
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          // Check for required headers: Date, Amount, Category, Type, Note
+          // Allow for different cases
+          const rows = results.data as any[];
+          const transactionsToImport = rows.map(row => {
+            // Find fields by checking common names
+            const date = row.Date || row.date || row.DATE;
+            const amount = row.Amount || row.amount || row.AMOUNT;
+            const category = row.Category || row.category || row.CATEGORY || "General";
+            const type = (row.Type || row.type || row.TYPE || "EXPENSE").toUpperCase();
+            const note = row.Note || row.note || row.NOTE || "";
+
+            return { date, amount, category, type, note };
+          }).filter(t => t.amount); // Filter rows without amounts
+
+          if (transactionsToImport.length === 0) {
+            setImportMessage("No valid transactions found in CSV.");
+            setImporting(false);
+            return;
+          }
+
+          setImportMessage(`Importing ${transactionsToImport.length} transactions...`);
+
+          const res = await fetch("/api/transactions/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ transactions: transactionsToImport }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            setImportMessage(`Success! ${data.count} transactions imported.`);
+            fetchData();
+            router.refresh();
+          } else {
+            setImportMessage("Failed to import transactions. Check CSV format.");
+          }
+        } catch (error) {
+          console.error("CSV Import Error:", error);
+          setImportMessage("Error parsing CSV. Ensure headers match: Date, Amount, Category, Type, Note.");
+        } finally {
+          setImporting(false);
+          // Clear file input
+          e.target.value = '';
+        }
+      },
+      error: (error) => {
+        console.error("Papa Parse Error:", error);
+        setImportMessage("Error reading file.");
+        setImporting(false);
+      }
+    });
+  };
+
   const totalIncome = transactions.filter(t => t.type === "INCOME").reduce((acc, t) => acc + t.amount, 0)
   const totalExpense = transactions.filter(t => t.type === "EXPENSE").reduce((acc, t) => acc + t.amount, 0)
   const netBalance = totalIncome - totalExpense
@@ -260,7 +330,27 @@ export default function Dashboard({ userName }: { userName: string }) {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 lg:col-span-1 h-fit flex flex-col gap-6">
           
           <div>
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Add Transaction</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Add Transaction</h2>
+              <div className="flex gap-2">
+                <label className="text-xs font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-full cursor-pointer hover:bg-blue-200 transition-colors">
+                  CSV Import
+                  <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" disabled={importing} />
+                </label>
+              </div>
+            </div>
+            
+            {importMessage && (
+              <div className={`text-xs p-3 rounded-lg mb-4 flex items-center gap-2 ${importMessage.includes("Success") ? "bg-green-100 text-green-800 border border-green-200" : "bg-blue-100 text-blue-800 border border-blue-200"}`}>
+                {importing ? (
+                  <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-ping"></span>
+                ) : (
+                  <span>ℹ️</span>
+                )}
+                {importMessage}
+              </div>
+            )}
+
             <form onSubmit={handleAddTransaction} className="flex flex-col gap-4">
               <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
                 <button
