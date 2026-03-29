@@ -35,14 +35,14 @@ export default async function Home() {
           <Dashboard userName={session.user?.name || session.user?.email || "User"} />
         ) : (
           <div className="bg-white p-12 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center mt-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Take Control of Your Money</h2>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Master Your Finances</h2>
             <p className="text-gray-500 max-w-md mb-8">
-              A simple, secure, and lightning-fast way to track your income and expenses.
+              The smartest, most secure way to track your income and expenses, powered by AI.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm justify-center">
               <Link 
                 href="/api/auth/signin"
-                className="w-full sm:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                className="w-full sm:w-auto px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors shadow-sm"
               >
                 Log In
               </Link>
@@ -57,6 +57,7 @@ export default async function Home() {
         )}
         
       </div>
+      <footer className="mt-8 text-center text-xs text-gray-400">© {new Date().getFullYear()} BroBot Finance. Built with OpenClaw.</footer>
     </main>
   )
 }
