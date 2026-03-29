@@ -89,6 +89,10 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
   const [importing, setImporting] = useState(false)
   const [importMessage, setImportMessage] = useState("")
 
+  // AI categorization state
+  const [categorizing, setCategorizing] = useState(false)
+  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null)
+
   useEffect(() => {
     fetchData()
   }, [])
@@ -212,6 +216,38 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
     if (res.ok) fetchData()
   }
 
+  const handleAutoCategorize = async () => {
+    if (!note?.trim()) {
+      alert("Please add a note/description first for AI to suggest a category.")
+      return
+    }
+
+    setCategorizing(true)
+    setSuggestedCategory(null)
+
+    try {
+      const res = await fetch("/api/transactions/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: note }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setSuggestedCategory(data.category)
+        setCategory(data.category)
+      } else {
+        console.error("Categorization failed")
+        setSuggestedCategory("Error")
+      }
+    } catch (error) {
+      console.error("Categorization error:", error)
+      setSuggestedCategory("Error")
+    } finally {
+      setCategorizing(false)
+    }
+  }
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -243,13 +279,24 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
       complete: async (results) => {
         try {
           const rows = results.data as CSVRow[];
-          const transactionsToImport = [];
-          const seen = new Set();
+          interface TempTransaction {
+            date: string;
+            amount: string;
+            category: string;
+            type: string;
+            note: string;
+          }
+          const transactionsToImport: TempTransaction[] = [];
+          const seen = new Set<string>();
+          const textsToCategorize: string[] = [];
+          const indicesNeedingCategorization: number[] = [];
 
-          for (const row of rows) {
+          // First pass: collect transactions and note texts needing categorization
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
             const date = row.Date || row.date || row.DATE;
             const amount = row.Amount || row.amount || row.AMOUNT;
-            const category = row.Category || row.category || row.CATEGORY || "General";
+            let category = row.Category || row.category || row.CATEGORY || "";
             const type = (row.Type || row.type || row.TYPE || "EXPENSE").toUpperCase();
             const note = row.Note || row.note || row.NOTE || "";
 
@@ -261,7 +308,7 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
             if (seen.has(fingerprint)) continue;
             seen.add(fingerprint);
 
-            // Additional deduplication against existing transactions (client-side check)
+            // Additional deduplication against existing transactions
             const isDuplicate = transactions.some(t => 
               new Date(t.date).toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0] &&
               t.amount.toString() === amount.toString() &&
@@ -270,13 +317,50 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
             );
             if (isDuplicate) continue;
 
-            transactionsToImport.push({ date, amount, category, type, note });
+            // If category is empty or "General", mark for AI categorization
+            if (!category || category.trim() === "" || category.toLowerCase() === "general") {
+              if (note && note.trim()) {
+                textsToCategorize.push(note.trim());
+                indicesNeedingCategorization.push(transactionsToImport.length);
+              } else {
+                category = "Other"; // fallback if no note
+              }
+            }
+
+            transactionsToImport.push({ date, amount, category: category || "Other", type, note });
           }
 
           if (transactionsToImport.length === 0) {
             setImportMessage("No new/valid transactions found in CSV.");
             setImporting(false);
             return;
+          }
+
+          // If we have texts to categorize, do batch categorization
+          if (textsToCategorize.length > 0) {
+            setImportMessage(`Categorizing ${textsToCategorize.length} transactions with AI...`);
+            try {
+              const catRes = await fetch("/api/transactions/categorize", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ texts: textsToCategorize }),
+              });
+
+              if (catRes.ok) {
+                const catData = await catRes.json();
+                // Apply suggested categories to the marked indices
+                indicesNeedingCategorization.forEach((idx, i) => {
+                  if (catData.categories[i]) {
+                    transactionsToImport[idx].category = catData.categories[i];
+                  }
+                });
+              } else {
+                console.warn("Batch categorization failed, using fallback 'Other'");
+                // Keep "Other" for failed ones
+              }
+            } catch (catError) {
+              console.error("Batch categorization error:", catError);
+            }
           }
 
           setImportMessage(`Importing ${transactionsToImport.length} transactions...`);
@@ -433,11 +517,33 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
                 value={amount} onChange={(e) => setAmount(e.target.value)} required
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <input
-                type="text" placeholder="Category (e.g. Groceries, Salary)"
-                value={category} onChange={(e) => setCategory(e.target.value)} required
-                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text" placeholder="Category (e.g. Groceries, Salary)"
+                  value={category} onChange={(e) => setCategory(e.target.value)} required
+                  className="flex-1 p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAutoCategorize}
+                  disabled={categorizing || !note?.trim()}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                    categorizing
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : note?.trim()
+                      ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  }`}
+                  title={note?.trim() ? "AI suggest category" : "Add a note first"}
+                >
+                  {categorizing ? "✨" : "✨"}
+                </button>
+              </div>
+              {suggestedCategory && (
+                <p className="text-xs text-purple-600 flex items-center gap-1">
+                  <span>🤖</span> Suggested: <strong>{suggestedCategory}</strong>
+                </p>
+              )}
               <input
                 type="text" placeholder="Note (optional)"
                 value={note} onChange={(e) => setNote(e.target.value)}

@@ -1,40 +1,44 @@
-# TOOLS.md - Local Notes
+# Vertex AI Integration Notes
 
-Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
+## Setup Required
 
-## What Goes Here
+**Before using Vertex AI features, complete these steps:**
 
-Things like:
+1. **Google Cloud Project**
+   - Create/select a GCP project
+   - Enable Vertex AI API: https://console.cloud.google.com/vertex-ai
+   - Enable Cloud Language API (optional, if using different model)
 
-- Camera names and locations
-- SSH hosts and aliases
-- Preferred voices for TTS
-- Speaker/room names
-- Device nicknames
-- Anything environment-specific
+2. **Service Account**
+   - Create a service account with "Vertex AI User" role
+   - Generate a JSON key file
+   - Save it securely (e.g., `~/.vertexai/service-account-key.json`)
 
-## Examples
+3. **Environment Variables** (add to `.env.production` and local `.env`):
+   ```
+   VERTEX_AI_PROJECT=your-gcp-project-id
+   VERTEX_AI_LOCATION=us-central1  # or your preferred region
+   GOOGLE_APPLICATION_CREDENTIALS=~/.vertexai/service-account-key.json
+   ```
 
-```markdown
-### Cameras
+4. **Install Dependencies**
+   ```bash
+   npm install @google-cloud/vertexai
+   ```
 
-- living-room → Main area, 180° wide angle
-- front-door → Entrance, motion-triggered
+## Features Enabled
 
-### SSH
+- **Auto-categorization**: AI suggests expense categories based on transaction notes/descriptions
+- Endpoint: `POST /api/transactions/categorize`
+- Frontend: "✨ Auto-categorize" button in the transaction form
 
-- home-server → 192.168.1.100, user: admin
+## Testing
 
-### TTS
-
-- Preferred voice: "Nova" (warm, slightly British)
-- Default speaker: Kitchen HomePod
+```bash
+# Local test with curl
+curl -X POST http://localhost:3000/api/transactions/categorize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Uber ride to airport"}'
 ```
 
-## Why Separate?
-
-Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
-
----
-
-Add whatever helps you do your job. This is your cheat sheet.
+Expected response: `{ "category": "Transport" }`

@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+# Google Cloud SDK (local install)
+/google-cloud-sdk
+
 # testing
 /coverage
 
