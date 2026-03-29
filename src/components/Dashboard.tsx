@@ -206,6 +206,24 @@ export default function Dashboard({ userName }: { userName: string }) {
     setImporting(true);
     setImportMessage("Parsing CSV...");
 
+    interface CSVRow {
+      Date?: string;
+      date?: string;
+      DATE?: string;
+      Amount?: string;
+      amount?: string;
+      AMOUNT?: string;
+      Category?: string;
+      category?: string;
+      CATEGORY?: string;
+      Type?: string;
+      type?: string;
+      TYPE?: string;
+      Note?: string;
+      note?: string;
+      NOTE?: string;
+    }
+
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
@@ -213,7 +231,7 @@ export default function Dashboard({ userName }: { userName: string }) {
         try {
           // Check for required headers: Date, Amount, Category, Type, Note
           // Allow for different cases
-          const rows = results.data as any[];
+          const rows = results.data as CSVRow[];
           const transactionsToImport = rows.map(row => {
             // Find fields by checking common names
             const date = row.Date || row.date || row.DATE;
@@ -223,7 +241,7 @@ export default function Dashboard({ userName }: { userName: string }) {
             const note = row.Note || row.note || row.NOTE || "";
 
             return { date, amount, category, type, note };
-          }).filter(t => t.amount); // Filter rows without amounts
+          }).filter(t => t.amount !== undefined && t.amount !== null && t.amount !== ""); // Filter rows without amounts
 
           if (transactionsToImport.length === 0) {
             setImportMessage("No valid transactions found in CSV.");

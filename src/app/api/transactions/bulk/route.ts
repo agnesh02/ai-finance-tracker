@@ -17,15 +17,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No transactions provided" }, { status: 400 })
     }
 
+    interface TransactionInput {
+      amount: string | number;
+      category?: string;
+      type?: "INCOME" | "EXPENSE";
+      note?: string;
+      date?: string | Date;
+    }
+
     // Format data for Prisma createMany
-    const formattedTransactions = transactions.map((t: any) => ({
-      amount: parseFloat(t.amount),
-      category: t.category || "Uncategorized",
-      type: t.type || "EXPENSE",
-      note: t.note || "",
-      date: t.date ? new Date(t.date) : new Date(),
-      userId: session.user.id,
-    }))
+    const formattedTransactions = transactions.map((t: TransactionInput) => {
+      const amount = parseFloat(t.amount.toString());
+      if (isNaN(amount)) {
+        throw new Error(`Invalid amount: ${t.amount}`);
+      }
+
+      const type = t.type === "INCOME" ? "INCOME" : "EXPENSE";
+
+      return {
+        amount,
+        category: t.category || "Uncategorized",
+        type,
+        note: t.note || "",
+        date: t.date ? new Date(t.date) : new Date(),
+        userId: session.user.id,
+      };
+    })
 
     const result = await prisma.transaction.createMany({
       data: formattedTransactions,
