@@ -13,6 +13,7 @@ import {
   ArcElement,
 } from 'chart.js'
 import { Bar, Pie } from 'react-chartjs-2'
+import Papa from 'papaparse'
 
 ChartJS.register(
   CategoryScale,
@@ -83,6 +84,10 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
   const [goalName, setGoalName] = useState("")
   const [goalTarget, setGoalTarget] = useState("")
   const [goalCurrent, setGoalCurrent] = useState("")
+
+  // CSV import state
+  const [importing, setImporting] = useState(false)
+  const [importMessage, setImportMessage] = useState("")
 
   useEffect(() => {
     fetchData()
@@ -207,6 +212,106 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
     if (res.ok) fetchData()
   }
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportMessage("Parsing CSV...");
+
+    interface CSVRow {
+      Date?: string;
+      date?: string;
+      DATE?: string;
+      Amount?: string;
+      amount?: string;
+      AMOUNT?: string;
+      Category?: string;
+      category?: string;
+      CATEGORY?: string;
+      Type?: string;
+      type?: string;
+      TYPE?: string;
+      Note?: string;
+      note?: string;
+      NOTE?: string;
+    }
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const rows = results.data as CSVRow[];
+          const transactionsToImport = [];
+          const seen = new Set();
+
+          for (const row of rows) {
+            const date = row.Date || row.date || row.DATE;
+            const amount = row.Amount || row.amount || row.AMOUNT;
+            const category = row.Category || row.category || row.CATEGORY || "General";
+            const type = (row.Type || row.type || row.TYPE || "EXPENSE").toUpperCase();
+            const note = row.Note || row.note || row.NOTE || "";
+
+            // Validation: Ensure required fields exist
+            if (!date || !amount) continue;
+
+            // Deduplication: Simple check based on date, amount, type, and note
+            const fingerprint = `${date}|${amount}|${type}|${note}`;
+            if (seen.has(fingerprint)) continue;
+            seen.add(fingerprint);
+
+            // Additional deduplication against existing transactions (client-side check)
+            const isDuplicate = transactions.some(t => 
+              new Date(t.date).toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0] &&
+              t.amount.toString() === amount.toString() &&
+              t.type === type &&
+              (t.note || "") === note
+            );
+            if (isDuplicate) continue;
+
+            transactionsToImport.push({ date, amount, category, type, note });
+          }
+
+          if (transactionsToImport.length === 0) {
+            setImportMessage("No new/valid transactions found in CSV.");
+            setImporting(false);
+            return;
+          }
+
+          setImportMessage(`Importing ${transactionsToImport.length} transactions...`);
+
+          const res = await fetch("/api/transactions/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ transactions: transactionsToImport }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            setImportMessage(`Success! ${data.count} transactions imported.`);
+            fetchData();
+            router.refresh();
+          } else {
+            const errorData = await res.json();
+            setImportMessage(`Failed: ${errorData.error || "Check CSV format."}`);
+          }
+        } catch (error) {
+          console.error("CSV Import Error:", error);
+          setImportMessage("Error parsing CSV. Ensure headers match: Date, Amount, Category, Type, Note.");
+        } finally {
+          setImporting(false);
+          e.target.value = '';
+        }
+      },
+      error: (error) => {
+        console.error("Papa Parse Error:", error);
+        setImportMessage("Error reading file.");
+        setImporting(false);
+      }
+    });
+  };
+
   const totalIncome = transactions.filter(t => t.type === "INCOME").reduce((acc, t) => acc + t.amount, 0)
   const totalExpense = transactions.filter(t => t.type === "EXPENSE").reduce((acc, t) => acc + t.amount, 0)
   const netBalance = totalIncome - totalExpense
@@ -279,7 +384,32 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 lg:col-span-1 h-fit flex flex-col gap-6">
           
           <div>
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Add Transaction</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Add Transaction</h2>
+              <div className="flex gap-2">
+                <label 
+                  htmlFor="csv-upload"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') document.getElementById('csv-upload')?.click(); }}
+                  className="text-xs font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-full cursor-pointer hover:bg-blue-200 transition-colors focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  CSV Import
+                  <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" disabled={importing} />
+                </label>
+              </div>
+            </div>
+            
+            {importMessage && (
+              <div className={`text-xs p-3 rounded-lg mb-4 flex items-center gap-2 ${importMessage.includes("Success") ? "bg-green-100 text-green-800 border border-green-200" : "bg-blue-100 text-blue-800 border border-blue-200"}`}>
+                {importing ? (
+                  <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-ping"></span>
+                ) : (
+                  <span>ℹ️</span>
+                )}
+                {importMessage}
+              </div>
+            )}
+
             <form onSubmit={handleAddTransaction} className="flex flex-col gap-4">
               <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
                 <button
