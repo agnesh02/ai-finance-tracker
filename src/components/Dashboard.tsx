@@ -69,6 +69,7 @@ export default function Dashboard({ userName }: { userName: string }) {
   const [category, setCategory] = useState("")
   const [type, setType] = useState<"INCOME" | "EXPENSE">("EXPENSE")
   const [note, setNote] = useState("")
+  const [isCategorizing, setIsCategorizing] = useState(false)
 
   // Budget form state
   const [budgetCategory, setBudgetCategory] = useState("")
@@ -105,6 +106,27 @@ export default function Dashboard({ userName }: { userName: string }) {
       console.error("Failed to fetch data", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+
+  const handleAutoCategorize = async () => {
+    if (!note) return
+    setIsCategorizing(true)
+    try {
+      const res = await fetch("/api/transactions/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: note }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.category) setCategory(data.category)
+      }
+    } catch (error) {
+      console.error("Auto-categorization failed", error)
+    } finally {
+      setIsCategorizing(false)
     }
   }
 
@@ -299,15 +321,25 @@ export default function Dashboard({ userName }: { userName: string }) {
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
-                type="text" placeholder="Category (e.g. Groceries, Salary)"
-                value={category} onChange={(e) => setCategory(e.target.value)} required
-                className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="text" placeholder="Note (optional)"
+                type="text" placeholder="Note / Description (e.g. Uber to airport)"
                 value={note} onChange={(e) => setNote(e.target.value)}
                 className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <div className="flex gap-2">
+                <input
+                  type="text" placeholder="Category"
+                  value={category} onChange={(e) => setCategory(e.target.value)} required
+                  className="p-3 border border-gray-200 rounded-lg w-full outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAutoCategorize}
+                  disabled={!note || isCategorizing}
+                  className="px-4 py-2 bg-indigo-50 text-indigo-600 font-medium rounded-lg hover:bg-indigo-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                >
+                  {isCategorizing ? "..." : "✨ Auto"}
+                </button>
+              </div>
               <button
                 type="submit"
                 className={`w-full py-3 text-white font-medium rounded-lg transition-colors mt-2 ${type === "INCOME" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
