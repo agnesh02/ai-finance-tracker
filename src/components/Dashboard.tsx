@@ -70,6 +70,7 @@ export default function Dashboard({ userName }: { userName: string }) {
   const [type, setType] = useState<"INCOME" | "EXPENSE">("EXPENSE")
   const [note, setNote] = useState("")
   const [isCategorizing, setIsCategorizing] = useState(false)
+  const [categorizationError, setCategorizationError] = useState("")
 
   // Budget form state
   const [budgetCategory, setBudgetCategory] = useState("")
@@ -113,6 +114,7 @@ export default function Dashboard({ userName }: { userName: string }) {
   const handleAutoCategorize = async () => {
     if (!note) return
     setIsCategorizing(true)
+    setCategorizationError("")
     try {
       const res = await fetch("/api/transactions/categorize", {
         method: "POST",
@@ -122,9 +124,12 @@ export default function Dashboard({ userName }: { userName: string }) {
       if (res.ok) {
         const data = await res.json()
         if (data.category) setCategory(data.category)
+      } else {
+        setCategorizationError("Auto-categorization failed. Please try again.")
       }
     } catch (error) {
       console.error("Auto-categorization failed", error)
+      setCategorizationError("Network error. Please try again.")
     } finally {
       setIsCategorizing(false)
     }
@@ -340,6 +345,9 @@ export default function Dashboard({ userName }: { userName: string }) {
                   {isCategorizing ? "..." : "✨ Auto"}
                 </button>
               </div>
+              {categorizationError && (
+                <p className="text-red-500 text-sm mt-1">{categorizationError}</p>
+              )}
               <button
                 type="submit"
                 className={`w-full py-3 text-white font-medium rounded-lg transition-colors mt-2 ${type === "INCOME" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
