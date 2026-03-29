@@ -1,0 +1,347 @@
+[
+  {
+    "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711406",
+    "pull_request_review_id": 4026347732,
+    "id": 3005711406,
+    "node_id": "PRRC_kwDORzRc2c6zJ4Qu",
+    "diff_hunk": "@@ -0,0 +1,43 @@\n+import { NextResponse } from \"next/server\"\n+import { getServerSession } from \"next-auth/next\"\n+import { authOptions } from \"@/app/api/auth/[...nextauth]/route\"\n+import { prisma } from \"@/lib/prisma\"\n+\n+export async function POST(req: Request) {\n+  const session = await getServerSession(authOptions)\n+\n+  if (!session || !session.user || !session.user.id) {\n+    return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 })\n+  }\n+\n+  try {\n+    const { transactions } = await req.json()\n+\n+    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {\n+      return NextResponse.json({ error: \"No transactions provided\" }, { status: 400 })\n+    }\n+\n+    // Format data for Prisma createMany\n+    const formattedTransactions = transactions.map((t: any) => ({",
+    "path": "src/app/api/transactions/bulk/route.ts",
+    "commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "original_commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "user": {
+      "login": "coderabbitai[bot]",
+      "id": 136622811,
+      "node_id": "BOT_kgDOCCSy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/in/347564?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/coderabbitai%5Bbot%5D",
+      "html_url": "https://github.com/apps/coderabbitai",
+      "followers_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "_⚠️ Potential issue_ | _🟠 Major_\n\n**Define a proper type for transaction input to fix pipeline failure.**\n\nThe `any` type is causing the ESLint/TypeScript pipeline to fail. Define an interface for the expected transaction structure.\n\n\n<details>\n<summary>🔧 Proposed fix</summary>\n\n```diff\n+interface TransactionInput {\n+  amount: string | number;\n+  category?: string;\n+  type?: string;\n+  note?: string;\n+  date?: string;\n+}\n\n// In the map function:\n-    const formattedTransactions = transactions.map((t: any) => ({\n+    const formattedTransactions = transactions.map((t: TransactionInput) => ({\n```\n</details>\n\n<details>\n<summary>🧰 Tools</summary>\n\n<details>\n<summary>🪛 GitHub Actions: CI & Code Quality</summary>\n\n[error] 21-21: ESLint (`@typescript-eslint/no-explicit-any`): Unexpected any. Specify a different type.\n\n</details>\n<details>\n<summary>🪛 GitHub Check: lint-and-typecheck</summary>\n\n[failure] 21-21: \nUnexpected any. Specify a different type\n\n</details>\n\n</details>\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against the current code and only fix it if needed.\n\nIn `@src/app/api/transactions/bulk/route.ts` at line 21, Replace the usage of the\n`any` type in the transactions mapping by declaring a proper interface (e.g.,\nTransactionInput) that captures the expected fields used inside the map, then\nupdate the mapping signature from `transactions.map((t: any) => ...)` to\n`transactions.map((t: TransactionInput) => ...)`; locate the mapping that\nproduces `formattedTransactions` and ensure the new interface is\nexported/defined near the top of the file (or imported) so TypeScript/ESLint\naccept the concrete type for `transactions` and eliminate the pipeline failure.\n```\n\n</details>\n\n<!-- fingerprinting:phantom:medusa:ocelot -->\n\n<!-- This is an auto-generated comment by CodeRabbit -->",
+    "created_at": "2026-03-29T04:54:16Z",
+    "updated_at": "2026-03-29T04:54:17Z",
+    "html_url": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711406",
+    "pull_request_url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711406"
+      },
+      "html": {
+        "href": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711406"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711406/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 21,
+    "original_line": 21,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 21,
+    "position": 21,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711408",
+    "pull_request_review_id": 4026347732,
+    "id": 3005711408,
+    "node_id": "PRRC_kwDORzRc2c6zJ4Qw",
+    "diff_hunk": "@@ -0,0 +1,43 @@\n+import { NextResponse } from \"next/server\"\n+import { getServerSession } from \"next-auth/next\"\n+import { authOptions } from \"@/app/api/auth/[...nextauth]/route\"\n+import { prisma } from \"@/lib/prisma\"\n+\n+export async function POST(req: Request) {\n+  const session = await getServerSession(authOptions)\n+\n+  if (!session || !session.user || !session.user.id) {\n+    return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 })\n+  }\n+\n+  try {\n+    const { transactions } = await req.json()\n+\n+    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {\n+      return NextResponse.json({ error: \"No transactions provided\" }, { status: 400 })\n+    }\n+\n+    // Format data for Prisma createMany\n+    const formattedTransactions = transactions.map((t: any) => ({\n+      amount: parseFloat(t.amount),",
+    "path": "src/app/api/transactions/bulk/route.ts",
+    "commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "original_commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "user": {
+      "login": "coderabbitai[bot]",
+      "id": 136622811,
+      "node_id": "BOT_kgDOCCSy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/in/347564?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/coderabbitai%5Bbot%5D",
+      "html_url": "https://github.com/apps/coderabbitai",
+      "followers_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "_⚠️ Potential issue_ | _🟠 Major_\n\n**`parseFloat` can produce `NaN`, which will be stored in the database.**\n\nIf `t.amount` is not a valid numeric string (e.g., `\"abc\"` or `undefined`), `parseFloat` returns `NaN`. Prisma will attempt to insert this, potentially causing database errors or storing invalid data.\n\n\n<details>\n<summary>🛡️ Proposed fix with validation</summary>\n\n```diff\n-    const formattedTransactions = transactions.map((t: any) => ({\n-      amount: parseFloat(t.amount),\n+    const formattedTransactions = transactions\n+      .map((t: TransactionInput) => {\n+        const amount = parseFloat(String(t.amount));\n+        if (isNaN(amount)) return null;\n+        return {\n+          amount,\n           category: t.category || \"Uncategorized\",\n-      type: t.type || \"EXPENSE\",\n+          type: [\"INCOME\", \"EXPENSE\"].includes(t.type?.toUpperCase() ?? \"\") \n+            ? t.type!.toUpperCase() \n+            : \"EXPENSE\",\n           note: t.note || \"\",\n           date: t.date ? new Date(t.date) : new Date(),\n           userId: session.user.id,\n-    }))\n+        };\n+      })\n+      .filter((t): t is NonNullable<typeof t> => t !== null);\n+\n+    if (formattedTransactions.length === 0) {\n+      return NextResponse.json({ error: \"No valid transactions after parsing\" }, { status: 400 });\n+    }\n```\n</details>\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against the current code and only fix it if needed.\n\nIn `@src/app/api/transactions/bulk/route.ts` at line 22, The mapping that builds\ntransactions uses parseFloat on t.amount and can produce NaN (see the amount:\nparseFloat(t.amount) in src/app/api/transactions/bulk/route.ts); validate the\nparsed value before saving by replacing the direct parseFloat call with a check:\nparse the value, verify Number.isFinite(parsedAmount) (or\n!Number.isNaN(parsedAmount)), and if invalid return a 4xx validation error (or\nskip/normalize according to API contract) instead of inserting NaN into the\nPrisma create; adjust the code around the transaction-mapping/creation logic\n(the function that constructs the bulk transactions array) to enforce this\nvalidation and include a clear error message referencing the offending input.\n```\n\n</details>\n\n<!-- fingerprinting:phantom:medusa:ocelot -->\n\n<!-- This is an auto-generated comment by CodeRabbit -->",
+    "created_at": "2026-03-29T04:54:16Z",
+    "updated_at": "2026-03-29T04:54:17Z",
+    "html_url": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711408",
+    "pull_request_url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711408"
+      },
+      "html": {
+        "href": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711408"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711408/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 22,
+    "original_line": 22,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 22,
+    "position": 22,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711409",
+    "pull_request_review_id": 4026347732,
+    "id": 3005711409,
+    "node_id": "PRRC_kwDORzRc2c6zJ4Qx",
+    "diff_hunk": "@@ -0,0 +1,43 @@\n+import { NextResponse } from \"next/server\"\n+import { getServerSession } from \"next-auth/next\"\n+import { authOptions } from \"@/app/api/auth/[...nextauth]/route\"\n+import { prisma } from \"@/lib/prisma\"\n+\n+export async function POST(req: Request) {\n+  const session = await getServerSession(authOptions)\n+\n+  if (!session || !session.user || !session.user.id) {\n+    return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 })\n+  }\n+\n+  try {\n+    const { transactions } = await req.json()\n+\n+    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {\n+      return NextResponse.json({ error: \"No transactions provided\" }, { status: 400 })\n+    }\n+\n+    // Format data for Prisma createMany\n+    const formattedTransactions = transactions.map((t: any) => ({\n+      amount: parseFloat(t.amount),\n+      category: t.category || \"Uncategorized\",\n+      type: t.type || \"EXPENSE\",",
+    "path": "src/app/api/transactions/bulk/route.ts",
+    "commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "original_commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "user": {
+      "login": "coderabbitai[bot]",
+      "id": 136622811,
+      "node_id": "BOT_kgDOCCSy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/in/347564?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/coderabbitai%5Bbot%5D",
+      "html_url": "https://github.com/apps/coderabbitai",
+      "followers_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "_⚠️ Potential issue_ | _🟡 Minor_\n\n**Type field accepts arbitrary strings without validation.**\n\nThe `type` field accepts any string value, but the domain model expects \"INCOME\" or \"EXPENSE\". Invalid types like \"DEBIT\" or typos will be silently accepted, potentially breaking filtering and calculations elsewhere in the app.\n\n\n\nConsider normalizing and validating the type value, or at minimum, converting to uppercase for consistency:\n\n```diff\n-      type: t.type || \"EXPENSE\",\n+      type: (t.type?.toUpperCase() === \"INCOME\" ? \"INCOME\" : \"EXPENSE\"),\n```\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n      type: (t.type?.toUpperCase() === \"INCOME\" ? \"INCOME\" : \"EXPENSE\"),\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against the current code and only fix it if needed.\n\nIn `@src/app/api/transactions/bulk/route.ts` at line 24, The transaction `type` is\ncurrently set with `type: t.type || \"EXPENSE\"` which allows arbitrary strings;\nupdate this by normalizing and validating `t.type` (e.g., convert to uppercase)\nand only accept \"INCOME\" or \"EXPENSE\"—if the normalized value is neither, fall\nback to \"EXPENSE\". Implement this check where `t.type` is used (the mapping that\nsets `type`) or extract it to a helper like `normalizeTransactionType(type)` and\nreplace `type: t.type || \"EXPENSE\"` with the validated/normalized result to\nensure downstream code only sees \"INCOME\" or \"EXPENSE\".\n```\n\n</details>\n\n<!-- fingerprinting:phantom:medusa:ocelot -->\n\n<!-- This is an auto-generated comment by CodeRabbit -->",
+    "created_at": "2026-03-29T04:54:16Z",
+    "updated_at": "2026-03-29T04:54:17Z",
+    "html_url": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711409",
+    "pull_request_url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711409"
+      },
+      "html": {
+        "href": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711409"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711409/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 24,
+    "original_line": 24,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 24,
+    "position": 24,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711411",
+    "pull_request_review_id": 4026347732,
+    "id": 3005711411,
+    "node_id": "PRRC_kwDORzRc2c6zJ4Qz",
+    "diff_hunk": "@@ -194,6 +199,71 @@ export default function Dashboard({ userName }: { userName: string }) {\n     if (res.ok) fetchData()\n   }\n \n+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {\n+    const file = e.target.files?.[0];\n+    if (!file) return;\n+\n+    setImporting(true);\n+    setImportMessage(\"Parsing CSV...\");\n+\n+    Papa.parse(file, {\n+      header: true,\n+      skipEmptyLines: true,\n+      complete: async (results) => {\n+        try {\n+          // Check for required headers: Date, Amount, Category, Type, Note\n+          // Allow for different cases\n+          const rows = results.data as any[];",
+    "path": "src/components/Dashboard.tsx",
+    "commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "original_commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "user": {
+      "login": "coderabbitai[bot]",
+      "id": 136622811,
+      "node_id": "BOT_kgDOCCSy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/in/347564?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/coderabbitai%5Bbot%5D",
+      "html_url": "https://github.com/apps/coderabbitai",
+      "followers_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "_⚠️ Potential issue_ | _🟡 Minor_\n\n**Add proper type for parsed CSV rows to fix pipeline failure.**\n\nThe `any[]` type is flagged by ESLint. Define an interface for the expected CSV row structure.\n\n\n<details>\n<summary>🔧 Proposed fix</summary>\n\n```diff\n+interface CSVRow {\n+  Date?: string;\n+  date?: string;\n+  DATE?: string;\n+  Amount?: string;\n+  amount?: string;\n+  AMOUNT?: string;\n+  Category?: string;\n+  category?: string;\n+  CATEGORY?: string;\n+  Type?: string;\n+  type?: string;\n+  TYPE?: string;\n+  Note?: string;\n+  note?: string;\n+  NOTE?: string;\n+}\n\n// In handleFileUpload:\n-          const rows = results.data as any[];\n+          const rows = results.data as CSVRow[];\n```\n</details>\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against the current code and only fix it if needed.\n\nIn `@src/components/Dashboard.tsx` at line 216, Replace the use of any[] for\nparsed CSV rows by declaring a specific interface (e.g., interface CsvRow { /*\nfields: id?: string; name: string; ... */ }) that matches the CSV schema and use\nit to type the variable (change const rows = results.data as any[] to const rows\n= results.data as CsvRow[]); add the CsvRow interface near the top of the\ncomponent or in a shared types file and update any downstream uses of rows\n(map/filter) to use the new typed properties (referencing rows, results.data,\nand the Dashboard component) so ESLint no longer flags any[].\n```\n\n</details>\n\n<!-- fingerprinting:phantom:medusa:ocelot -->\n\n<!-- This is an auto-generated comment by CodeRabbit -->",
+    "created_at": "2026-03-29T04:54:16Z",
+    "updated_at": "2026-03-29T04:54:17Z",
+    "html_url": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711411",
+    "pull_request_url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711411"
+      },
+      "html": {
+        "href": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711411"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711411/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 216,
+    "original_line": 216,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 37,
+    "position": 37,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711412",
+    "pull_request_review_id": 4026347732,
+    "id": 3005711412,
+    "node_id": "PRRC_kwDORzRc2c6zJ4Q0",
+    "diff_hunk": "@@ -194,6 +199,71 @@ export default function Dashboard({ userName }: { userName: string }) {\n     if (res.ok) fetchData()\n   }\n \n+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {\n+    const file = e.target.files?.[0];\n+    if (!file) return;\n+\n+    setImporting(true);\n+    setImportMessage(\"Parsing CSV...\");\n+\n+    Papa.parse(file, {\n+      header: true,\n+      skipEmptyLines: true,\n+      complete: async (results) => {\n+        try {\n+          // Check for required headers: Date, Amount, Category, Type, Note\n+          // Allow for different cases\n+          const rows = results.data as any[];\n+          const transactionsToImport = rows.map(row => {\n+            // Find fields by checking common names\n+            const date = row.Date || row.date || row.DATE;\n+            const amount = row.Amount || row.amount || row.AMOUNT;\n+            const category = row.Category || row.category || row.CATEGORY || \"General\";\n+            const type = (row.Type || row.type || row.TYPE || \"EXPENSE\").toUpperCase();\n+            const note = row.Note || row.note || row.NOTE || \"\";\n+\n+            return { date, amount, category, type, note };\n+          }).filter(t => t.amount); // Filter rows without amounts",
+    "path": "src/components/Dashboard.tsx",
+    "commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "original_commit_id": "1c9d592eb70c38956f0b9cfb0887601785495f30",
+    "user": {
+      "login": "coderabbitai[bot]",
+      "id": 136622811,
+      "node_id": "BOT_kgDOCCSy2w",
+      "avatar_url": "https://avatars.githubusercontent.com/in/347564?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/coderabbitai%5Bbot%5D",
+      "html_url": "https://github.com/apps/coderabbitai",
+      "followers_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/coderabbitai%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "_⚠️ Potential issue_ | _🟡 Minor_\n\n**Filtering by truthy `amount` excludes legitimate zero-value transactions.**\n\nThe filter `.filter(t => t.amount)` uses a truthy check, which will exclude rows where amount is `0`, `\"0\"`, or `\"\"`. While `\"\"` should be filtered, a zero amount might be a valid transaction (e.g., a $0 promotional credit).\n\nConsider explicitly checking for the presence and validity of the amount instead.\n\n\n<details>\n<summary>🔧 Proposed fix</summary>\n\n```diff\n-          }).filter(t => t.amount); // Filter rows without amounts\n+          }).filter(t => t.amount !== undefined && t.amount !== null && t.amount !== \"\");\n```\n</details>\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n          }).filter(t => t.amount !== undefined && t.amount !== null && t.amount !== \"\");\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nVerify each finding against the current code and only fix it if needed.\n\nIn `@src/components/Dashboard.tsx` at line 226, The current filter `.filter(t =>\nt.amount)` in Dashboard.tsx erroneously drops valid zero amounts; replace it\nwith an explicit presence/validity check on t.amount (e.g., ensure t.amount is\nnot null/undefined and not the empty string) so that numeric 0 or \"0\" are\npreserved while still excluding blank values; update the filter expression where\nrows are filtered (referencing the `.filter(t => t.amount)` call and the\nt.amount field) and, if downstream code assumes numeric values, coerce or\nvalidate the amount to a Number after the filter.\n```\n\n</details>\n\n<!-- fingerprinting:phantom:medusa:ocelot -->\n\n<!-- This is an auto-generated comment by CodeRabbit -->",
+    "created_at": "2026-03-29T04:54:16Z",
+    "updated_at": "2026-03-29T04:54:17Z",
+    "html_url": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711412",
+    "pull_request_url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711412"
+      },
+      "html": {
+        "href": "https://github.com/agnesh02/ai-finance-tracker/pull/18#discussion_r3005711412"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/18"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/agnesh02/ai-finance-tracker/pulls/comments/3005711412/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 226,
+    "original_line": 226,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 47,
+    "position": 47,
+    "subject_type": "line"
+  }
+]
