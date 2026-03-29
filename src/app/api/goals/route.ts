@@ -20,11 +20,11 @@ export async function POST(req: Request) {
 
   const { name, targetAmount, currentAmount, deadline } = await req.json()
   
-  const parsedTarget = parseFloat(targetAmount)
-  const parsedCurrent = parseFloat(currentAmount || 0)
+  const parsedTarget = parseFloat(targetAmount || "0")
+  const parsedCurrent = parseFloat(currentAmount || "0")
 
-  if (!name || !Number.isFinite(parsedTarget) || parsedTarget < 0) {
-    return NextResponse.json({ error: "Valid name and target amount are required" }, { status: 400 })
+  if (!name || !targetAmount || !Number.isFinite(parsedTarget) || parsedTarget <= 0) {
+    return NextResponse.json({ error: "Valid name and positive target amount are required" }, { status: 400 })
   }
 
   const goal = await prisma.goal.create({
@@ -44,6 +44,11 @@ export async function PATCH(req: Request) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { id, currentAmount } = await req.json()
+  
+  if (currentAmount === undefined || currentAmount === null) {
+    return NextResponse.json({ error: "currentAmount is required" }, { status: 400 })
+  }
+
   const parsedAmount = parseFloat(currentAmount)
 
   if (!id || !Number.isFinite(parsedAmount) || parsedAmount < 0) {
