@@ -11,9 +11,9 @@
 - **Automation:** Uses persistent Cron Jobs for PR monitoring and CodeRabbit for AI reviews.
 
 ## Infrastructure & Configuration
-- **Database:** Supabase PostgreSQL. Using **Connection Pooler** (port `6543` with `?pgbouncer=true` and `sslmode=require`) to resolve Vercel IPv6 outbound connection issues.
-- **Telegram Integration:** User ID `830692749`. Cron jobs configured with `delivery.channel="telegram"` for real-time notifications.
-- **Voice/Feedback:** System beep `afplay /System/Library/Sounds/Ping.aiff &` triggers before every final response.
+- **Database:** Supabase PostgreSQL. Using Connection Pooler to resolve Vercel IPv6 outbound connection issues.
+- **Telegram Integration:** User ID redacted. Cron jobs configured with `delivery.channel="telegram"` for real-time notifications.
+- **Voice/Feedback:** System beep triggers before every final response.
 
 ## Core Principles & User Preferences
 - **Persona:** Chill, casual, straight to the point (BroBot).

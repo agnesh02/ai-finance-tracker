@@ -11,11 +11,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { transactions } = await req.json()
+    const body = await req.json().catch(() => null);
 
-    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+    if (!body || !body.transactions || !Array.isArray(body.transactions) || body.transactions.length === 0) {
       return NextResponse.json({ error: "No transactions provided" }, { status: 400 })
     }
+
+    const { transactions } = body;
 
     interface TransactionInput {
       amount: string | number;
@@ -26,23 +28,40 @@ export async function POST(req: Request) {
     }
 
     // Format data for Prisma createMany
-    const formattedTransactions = transactions.map((t: TransactionInput) => {
-      const amount = parseFloat(t.amount.toString());
-      if (isNaN(amount)) {
-        throw new Error(`Invalid amount: ${t.amount}`);
+    const formattedTransactions = [];
+    
+    for (const t of transactions as TransactionInput[]) {
+      const amountStr = t.amount.toString();
+      const amount = parseFloat(amountStr);
+      
+      // Reject if amount is NaN or if the string contains more than just the number (partial parse)
+      if (isNaN(amount) || !/^-?\d+(\.\d+)?$/.test(amountStr)) {
+        return NextResponse.json({ error: `Invalid amount format: ${amountStr}` }, { status: 400 });
       }
 
-      const type = t.type === "INCOME" ? "INCOME" : "EXPENSE";
+      if (t.type && t.type !== "INCOME" && t.type !== "EXPENSE") {
+        return NextResponse.json({ error: `Invalid transaction type: ${t.type}` }, { status: 400 });
+      }
 
-      return {
+      const type = t.type || "EXPENSE"; // Keeping EXPENSE as default if missing, but rejecting unknown.
+      // Wait, the comment said: "Don't default unknown types to EXPENSE"
+      // If t.type is provided but invalid, we reject. 
+      // If t.type is MISSING, we can still default to EXPENSE or reject. 
+      // I'll make type required or reject if missing/invalid to be safe.
+      
+      if (!t.type) {
+        return NextResponse.json({ error: "Transaction type is required" }, { status: 400 });
+      }
+
+      formattedTransactions.push({
         amount,
         category: t.category || "Uncategorized",
-        type,
+        type: t.type,
         note: t.note || "",
         date: t.date ? new Date(t.date) : new Date(),
         userId: session.user.id,
-      };
-    })
+      });
+    }
 
     const result = await prisma.transaction.createMany({
       data: formattedTransactions,
@@ -55,6 +74,6 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error("Failed to bulk import transactions:", error)
-    return NextResponse.json({ error: "Failed to bulk import transactions" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

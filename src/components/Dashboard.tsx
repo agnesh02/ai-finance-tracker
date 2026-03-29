@@ -242,22 +242,39 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          // Check for required headers: Date, Amount, Category, Type, Note
-          // Allow for different cases
           const rows = results.data as CSVRow[];
-          const transactionsToImport = rows.map(row => {
-            // Find fields by checking common names
+          const transactionsToImport = [];
+          const seen = new Set();
+
+          for (const row of rows) {
             const date = row.Date || row.date || row.DATE;
             const amount = row.Amount || row.amount || row.AMOUNT;
             const category = row.Category || row.category || row.CATEGORY || "General";
             const type = (row.Type || row.type || row.TYPE || "EXPENSE").toUpperCase();
             const note = row.Note || row.note || row.NOTE || "";
 
-            return { date, amount, category, type, note };
-          }).filter(t => t.amount !== undefined && t.amount !== null && t.amount !== ""); // Filter rows without amounts
+            // Validation: Ensure required fields exist
+            if (!date || !amount) continue;
+
+            // Deduplication: Simple check based on date, amount, type, and note
+            const fingerprint = `${date}|${amount}|${type}|${note}`;
+            if (seen.has(fingerprint)) continue;
+            seen.add(fingerprint);
+
+            // Additional deduplication against existing transactions (client-side check)
+            const isDuplicate = transactions.some(t => 
+              new Date(t.date).toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0] &&
+              t.amount.toString() === amount.toString() &&
+              t.type === type &&
+              (t.note || "") === note
+            );
+            if (isDuplicate) continue;
+
+            transactionsToImport.push({ date, amount, category, type, note });
+          }
 
           if (transactionsToImport.length === 0) {
-            setImportMessage("No valid transactions found in CSV.");
+            setImportMessage("No new/valid transactions found in CSV.");
             setImporting(false);
             return;
           }
@@ -276,14 +293,14 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
             fetchData();
             router.refresh();
           } else {
-            setImportMessage("Failed to import transactions. Check CSV format.");
+            const errorData = await res.json();
+            setImportMessage(`Failed: ${errorData.error || "Check CSV format."}`);
           }
         } catch (error) {
           console.error("CSV Import Error:", error);
           setImportMessage("Error parsing CSV. Ensure headers match: Date, Amount, Category, Type, Note.");
         } finally {
           setImporting(false);
-          // Clear file input
           e.target.value = '';
         }
       },
@@ -370,9 +387,14 @@ export default function Dashboard({ userName = "User" }: { userName?: string }) 
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-800">Add Transaction</h2>
               <div className="flex gap-2">
-                <label className="text-xs font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-full cursor-pointer hover:bg-blue-200 transition-colors">
+                <label 
+                  htmlFor="csv-upload"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') document.getElementById('csv-upload')?.click(); }}
+                  className="text-xs font-semibold bg-blue-100 text-blue-800 px-3 py-1 rounded-full cursor-pointer hover:bg-blue-200 transition-colors focus:ring-2 focus:ring-blue-500 outline-none"
+                >
                   CSV Import
-                  <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" disabled={importing} />
+                  <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" disabled={importing} />
                 </label>
               </div>
             </div>
