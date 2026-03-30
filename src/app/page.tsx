@@ -13,7 +13,7 @@ export default async function Home() {
         {/* HEADER */}
         <header className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-teal-500">
-            Financial Tracker
+            Pocket Guardian
           </h1>
           {session ? (
             <div className="flex items-center gap-4">
